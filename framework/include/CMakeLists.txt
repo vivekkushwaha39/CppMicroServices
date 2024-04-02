@@ -3,6 +3,7 @@
 #-----------------------------------------------------------------------------
 
 set(_public_headers
+  cppmicroservices/NewAny.h
   cppmicroservices/Any.h
   cppmicroservices/AnyMap.h
   cppmicroservices/Framework.h

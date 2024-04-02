@@ -32,6 +32,7 @@ include_directories(
 # Add test source files
 #-----------------------------------------------------------------------------
 set(_gtest_tests
+  NewAnyTest.cpp
   AnyTest.cpp
   AnyMapTest.cpp
   BundleActivatorTest.cpp
