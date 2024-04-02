@@ -29,7 +29,16 @@ namespace cppmicroservices
                 return *this;
             }
 
-            recursive_wrapper& operator=(recursive_wrapper&&) noexcept = default;
+            recursive_wrapper&
+            operator=(recursive_wrapper&& other)
+            {
+                if (this == &this)
+                {
+                    return *this;
+                }
+                *ptr = *other.ptr;
+                return *this;
+            }
 
             bool
             operator==(recursive_wrapper const& other)
@@ -65,13 +74,21 @@ namespace cppmicroservices
         bool operator==(AnyMap const& v1, AnyMap const& v2);
         bool operator!=(Any const& v1, Any const& v2);
         bool operator!=(AnyMap const& v1, AnyMap const& v2);
-        using tAnyVariant = std::variant<int, std::string, recursive_wrapper<Any>, std::vector<Any>, AnyMap, double>;
+        using tAnyVariant
+            = std::variant<int, std::string, recursive_wrapper<Any>, std::vector<Any>, AnyMap, double, bool>;
         inline void anyVariantToJson(tAnyVariant const& node, int indent = 0);
-
         class AnyMap
         {
           public:
             std::map<std::string, tAnyVariant> map;
+            AnyMap() {}
+            AnyMap(AnyMap const& other)
+            {
+                for (auto const& [key, value] : other.map)
+                {
+                    map[key] = value; // Deep copy of tAnyVariant
+                }
+            }
         };
 
         bool
@@ -91,6 +108,34 @@ namespace cppmicroservices
             Any(tAnyVariant ch) : child(ch) {}
 
             Any(std::initializer_list<Any> const& list) : child { std::vector<Any>(list) } {}
+
+            Any(Any const& other) : child(other.child)
+            {
+                if (child.index() == 2)
+                { // Check if variant is recursive_wrapper<Any>
+                    child = std::get<recursive_wrapper<Any>>(other.child);
+                }
+                else if (child.index() == 3)
+                { // Check if variant is vector<Any>
+                    auto const& vec = std::get<std::vector<Any>>(other.child);
+                    std::vector<Any> newVec;
+                    for (auto const& elem : vec)
+                    {
+                        newVec.push_back(elem); // Deep copy of vector elements
+                    }
+                    child = newVec;
+                }
+                else if (child.index() == 4)
+                { // Check if variant is AnyMap
+                    auto const& map = std::get<AnyMap>(other.child);
+                    AnyMap newMap;
+                    for (auto const& [key, value] : map.map)
+                    {
+                        newMap.map[key] = value; // Deep copy of AnyMap values
+                    }
+                    child = newMap;
+                }
+            }
         };
 
         bool equalVar(tAnyVariant const& var1, tAnyVariant const& var2);
@@ -147,7 +192,8 @@ namespace cppmicroservices
                 [&](auto&& arg)
                 {
                     using T = std::decay_t<decltype(arg)>;
-                    if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::string> || std::is_same_v<T, double>)
+                    if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::string> || std::is_same_v<T, double>
+                                  || std::is_same_v<T, bool>)
                     {
                         std::cout << std::string(indent, ' ') << arg << "\n";
                     }
