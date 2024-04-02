@@ -74,8 +74,9 @@ namespace cppmicroservices
         bool operator==(AnyMap const& v1, AnyMap const& v2);
         bool operator!=(Any const& v1, Any const& v2);
         bool operator!=(AnyMap const& v1, AnyMap const& v2);
+
         using tAnyVariant
-            = std::variant<int, std::string, recursive_wrapper<Any>, std::vector<Any>, AnyMap, double, bool>;
+            = std::variant<double, bool, int, std::string, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
         inline void anyVariantToJson(tAnyVariant const& node, int indent = 0);
         class AnyMap
         {
@@ -88,6 +89,24 @@ namespace cppmicroservices
                 {
                     map[key] = value; // Deep copy of tAnyVariant
                 }
+            }
+
+            tAnyVariant&
+            operator[](std::string const& key)
+            {
+                return map[key];
+            }
+
+            tAnyVariant const&
+            operator[](std::string const& key) const
+            {
+                return map.at(key);
+            }
+
+            size_t
+            erase(std::string const& key)
+            {
+                return map.erase(key);
             }
         };
 
@@ -111,11 +130,11 @@ namespace cppmicroservices
 
             Any(Any const& other) : child(other.child)
             {
-                if (child.index() == 2)
+                if (child.index() == 4)
                 { // Check if variant is recursive_wrapper<Any>
                     child = std::get<recursive_wrapper<Any>>(other.child);
                 }
-                else if (child.index() == 3)
+                else if (child.index() == 5)
                 { // Check if variant is vector<Any>
                     auto const& vec = std::get<std::vector<Any>>(other.child);
                     std::vector<Any> newVec;
@@ -125,7 +144,7 @@ namespace cppmicroservices
                     }
                     child = newVec;
                 }
-                else if (child.index() == 4)
+                else if (child.index() == 6)
                 { // Check if variant is AnyMap
                     auto const& map = std::get<AnyMap>(other.child);
                     AnyMap newMap;
@@ -157,7 +176,7 @@ namespace cppmicroservices
                 return false;
             }
 
-            if (var1.index() == 2)
+            if (var1.index() == 5)
             { // Check if variant is a vector
                 auto const& vec1 = std::get<std::vector<Any>>(var1);
                 auto const& vec2 = std::get<std::vector<Any>>(var2);

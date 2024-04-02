@@ -41,23 +41,23 @@ TEST(NewAnyTest, AnyEquality)
     EXPECT_NE(new_any::Any(1.5), new_any::Any(1.6));
 
     new_any::AnyMap lhs;
-    lhs.map["int"] = 1;
-    lhs.map["float"] = 2.5;
-    lhs.map["string"] = std::string("string");
-    lhs.map["bool"] = true;
+    lhs["int"] = 1;
+    lhs["float"] = 2.5;
+    lhs["string"] = std::string("string");
+    lhs["bool"] = true;
     new_any::AnyMap submap;
-    submap.map["a"] = std::string("a");
-    submap.map["b"] = std::string("b");
-    lhs.map["submap"] = submap;
+    submap["a"] = std::string("a");
+    submap["b"] = std::string("b");
+    lhs["submap"] = submap;
 
     new_any::AnyMap rhs = lhs; // make a copy of lhs
     EXPECT_EQ(lhs, rhs);       // they should be equal
 
-    rhs.map["int"] = 2;
+    rhs["int"] = 2;
     EXPECT_NE(lhs, rhs); // they should not be equal after modifying the rhs.
-    rhs.map["int"] = 1;
+    rhs["int"] = 1;
     EXPECT_EQ(lhs, rhs); // now they should be equal again
-    rhs.map.erase("int");
+    rhs.erase("int");
     EXPECT_NE(lhs,
               rhs); // and finally, with the "int" element erased, they should not be equal
                     // anymore.
