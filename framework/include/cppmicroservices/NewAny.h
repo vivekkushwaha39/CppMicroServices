@@ -132,8 +132,12 @@ namespace cppmicroservices
         {
 
             tAnyVariant child;
-
-            Any(tAnyVariant ch) { child = ch; }
+            template <class T>
+            Any(T ch)
+            {
+                child = ch;
+            }
+            Any(char const* str) { child = std::string(str); }
 
             template <class T>
             Any(std::initializer_list<T> const& list)

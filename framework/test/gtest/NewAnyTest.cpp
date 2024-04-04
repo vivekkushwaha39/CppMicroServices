@@ -64,13 +64,13 @@ TEST(NewAnyTest, AnyEquality)
 
     new_any::Any a { 1, 2, 3, 4 };
     new_any::Any x("a");
-    new_any::tAnyVariant aaa { "aaaa" };
     std::pair<std::string, new_any::tAnyVariant> p { "abcd", 2 };
 
     new_any::AnyMap m {
         {  "hi",                  2},
         {"lost",                  3},
-        {  "as", new_any::Any("ab")}
+        {  "as", new_any::Any("ab")},
+        p
     };
 
     new_any::anyMapToJson(m);
