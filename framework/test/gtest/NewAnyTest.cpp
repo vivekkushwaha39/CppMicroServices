@@ -85,3 +85,23 @@ TEST(NewAnyTest, AnyEquality)
 
     std::cout << new_any::anyToJson(ss);
 }
+TEST(NewAnyTest, AnyList)
+{
+
+    std::list<int> a { 1, 2, 3, 4 };
+    new_any::Any aa(a);
+    std::map<std::string, int> strIntMap {
+        {"a", 1},
+        {"b", 2}
+    };
+    new_any::AnyMap map1 {
+        {"abcd", aa}
+    };
+    new_any::AnyMap map2(strIntMap);
+
+    std::cout << "--------------------------------\n" << aa.ToJson() << "\n";
+
+    std::cout << "--------------------------------\n" << map2.ToJson() << "\n";
+
+    std::cout << "--------------------------------\n" << map1.ToJson() << "\n";
+}

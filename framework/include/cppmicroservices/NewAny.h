@@ -1,9 +1,11 @@
 #include <iostream>
+#include <list>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <variant>
 #include <vector>
+
 namespace cppmicroservices
 {
     namespace new_any
@@ -79,12 +81,22 @@ namespace cppmicroservices
             = std::variant<std::string, double, int, bool, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
 
         inline std::string anyVariantToJson(tAnyVariant const& node, int indent = 0);
+        inline std::string anyMapToJson(AnyMap const& map);
 
         class AnyMap
         {
           public:
             std::map<std::string, tAnyVariant> map;
             AnyMap() {}
+
+            template <class T>
+            AnyMap(std::map<std::string, T> const& other)
+            {
+                for (auto const& [key, value] : other)
+                {
+                    map.insert(std::make_pair(key, tAnyVariant { value }));
+                }
+            }
 
             AnyMap(std::initializer_list<std::pair<std::string, tAnyVariant>> const& list)
             {
@@ -116,6 +128,12 @@ namespace cppmicroservices
             {
                 return map.erase(key);
             }
+
+            std::string
+            ToJson()
+            {
+                return anyMapToJson(*this);
+            }
         };
 
         bool
@@ -128,17 +146,40 @@ namespace cppmicroservices
         {
             return !(v1 == v2);
         }
-
+        std::string anyToJson(Any const& obj, int indent = 0);
         class Any
         {
           public:
             tAnyVariant child;
             template <class T>
-            Any(T ch)
+            Any(T const& ch)
             {
                 child = ch;
             }
             Any(char const* str) { child = std::string(str); }
+
+            template <class T>
+            Any(std::vector<T> const& list)
+            {
+                std::vector<Any> data;
+                for (auto& item : list)
+                {
+                    auto anyObj = tAnyVariant { item };
+                    data.push_back(anyObj);
+                    child = data;
+                }
+            }
+            template <class T>
+            Any(std::list<T> const& list)
+            {
+                std::vector<Any> data;
+                for (auto& item : list)
+                {
+                    auto anyObj = tAnyVariant { item };
+                    data.push_back(anyObj);
+                    child = data;
+                }
+            }
 
             template <class T>
             Any(std::initializer_list<T> const& list)
@@ -190,6 +231,12 @@ namespace cppmicroservices
                     return *val;
                 }
                 throw std::bad_cast(); // Throw if the cast cannot be performed
+            }
+
+            std::string
+            ToJson()
+            {
+                return anyToJson(*this);
             }
         };
 
@@ -263,7 +310,7 @@ namespace cppmicroservices
                         }
                         ss << std::string(indent, ' ') << "}\n";
                     }
-                    else if constexpr (std::is_same_v<T, std::vector<Any>>)
+                    else if constexpr (std::is_same_v<T, std::vector<Any>> || std::is_same_v<T, std::list<Any>>)
                     {
                         ss << std::string(indent, ' ') << "[\n";
                         for (auto& v : arg)
@@ -284,7 +331,7 @@ namespace cppmicroservices
         }
 
         inline std::string
-        anyToJson(Any const& obj, int indent = 0)
+        anyToJson(Any const& obj, int indent)
         {
             return anyVariantToJson(obj.child);
         }
