@@ -3,7 +3,7 @@
 #include <memory>
 #include <variant>
 #include <vector>
-
+#include <sstream>
 namespace cppmicroservices
 {
     namespace new_any
@@ -78,7 +78,7 @@ namespace cppmicroservices
         using tAnyVariant
             = std::variant<std::string, double, int, bool, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
 
-        inline void anyVariantToJson(tAnyVariant const& node, int indent = 0);
+        inline std::string anyVariantToJson(tAnyVariant const& node, int indent = 0);
 
         class AnyMap
         {
@@ -128,9 +128,10 @@ namespace cppmicroservices
         {
             return !(v1 == v2);
         }
-        struct Any
+        
+        class Any
         {
-
+        public:
             tAnyVariant child;
             template <class T>
             Any(T ch)
@@ -178,6 +179,16 @@ namespace cppmicroservices
                     child = newMap;
                 }
             }
+
+            template<typename T>
+            friend T any_cast(const Any& operand) {
+                // Check if the type T is held by the variant and return it
+                if (auto val = std::get_if<T>(&operand.value)) {
+                    return *val;
+                }
+                throw std::bad_cast(); // Throw if the cast cannot be performed
+            }
+
         };
 
         bool equalVar(tAnyVariant const& var1, tAnyVariant const& var2);
@@ -227,9 +238,10 @@ namespace cppmicroservices
         {
             return !(a1 == a2);
         }
-        inline void
+        inline std::string
         anyVariantToJson(tAnyVariant const& node, int indent)
         {
+            std::ostringstream ss;
             std::visit(
                 [&](auto&& arg)
                 {
@@ -237,45 +249,47 @@ namespace cppmicroservices
                     if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::string> || std::is_same_v<T, double>
                                   || std::is_same_v<T, bool>)
                     {
-                        std::cout << std::string(indent, ' ') << arg << "\n";
+                        ss << std::string(indent, ' ') << arg << "\n";
                     }
                     else if constexpr (std::is_same_v<T, AnyMap>)
                     {
-                        std::cout << std::string(indent, ' ') << "{\n";
+                        ss << std::string(indent, ' ') << "{\n";
                         for (const auto& [key, value] : arg.map)
                         {
-                            std::cout << std::string(indent, ' ') << key << ": \n";
-                            anyVariantToJson(value, indent + 2);
+                            ss << std::string(indent, ' ') << key << ": \n";
+                            ss << anyVariantToJson(value, indent + 2);
                         }
-                        std::cout << std::string(indent, ' ') << "}\n";
+                        ss << std::string(indent, ' ') << "}\n";
                     }
                     else if constexpr (std::is_same_v<T, std::vector<Any>>)
                     {
-                        std::cout << std::string(indent, ' ') << "[\n";
+                        ss << std::string(indent, ' ') << "[\n";
                         for (auto& v : arg)
                         {
-                            anyVariantToJson(v, indent + 2);
-                            std::cout << std::string(indent + 2, ' ') << ",\n";
+                            ss << anyVariantToJson(v, indent + 2);
+                            ss << std::string(indent + 2, ' ') << ",\n";
                         }
-                        std::cout << std::string(indent, ' ') << "]\n";
+                        ss << std::string(indent, ' ') << "]\n";
                     }
                     else
                     { // Node or recursive_wrapper
-                        anyVariantToJson(arg.get().child, indent + 2);
+                        ss << anyVariantToJson(arg.get().child, indent + 2);
                     }
                 },
                 node);
+
+            return ss.str();
         }
 
-        inline void
+        inline std::string
         anyToJson(Any const& obj, int indent = 0)
         {
-            anyVariantToJson(obj.child);
+            return anyVariantToJson(obj.child);
         }
-        inline void
+        inline std::string
         anyMapToJson(AnyMap const& map)
         {
-            anyVariantToJson(tAnyVariant { map });
+            return anyVariantToJson(tAnyVariant { map });
         }
     } // namespace new_any
 } // namespace cppmicroservices
