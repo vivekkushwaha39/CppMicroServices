@@ -76,13 +76,21 @@ namespace cppmicroservices
         bool operator!=(AnyMap const& v1, AnyMap const& v2);
 
         using tAnyVariant
-            = std::variant<double, bool, int, std::string, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
+            = std::variant<std::string, double, int, bool, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
+
         inline void anyVariantToJson(tAnyVariant const& node, int indent = 0);
+
         class AnyMap
         {
           public:
             std::map<std::string, tAnyVariant> map;
             AnyMap() {}
+
+            AnyMap(std::initializer_list<std::pair<std::string, tAnyVariant>> const& list)
+            {
+                map.insert(list.begin(), list.end());
+            }
+
             AnyMap(AnyMap const& other)
             {
                 for (auto const& [key, value] : other.map)
@@ -124,9 +132,20 @@ namespace cppmicroservices
         {
 
             tAnyVariant child;
-            Any(tAnyVariant ch) : child(ch) {}
 
-            Any(std::initializer_list<Any> const& list) : child { std::vector<Any>(list) } {}
+            Any(tAnyVariant ch) { child = ch; }
+
+            template <class T>
+            Any(std::initializer_list<T> const& list)
+            {
+                std::vector<Any> data;
+                for (auto& item : list)
+                {
+                    auto anyObj = tAnyVariant { item };
+                    data.push_back(anyObj);
+                    child = data;
+                }
+            }
 
             Any(Any const& other) : child(other.child)
             {
