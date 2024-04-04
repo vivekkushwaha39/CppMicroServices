@@ -65,9 +65,10 @@ TEST(NewAnyTest, AnyEquality)
     new_any::Any a { 1, 2, 3, 4 };
     new_any::Any x("a");
 
+    new_any::AnyMap m2 {
+        {"hi", 1}
+    };
 
-    new_any::AnyMap m2{ {"hi", 1} };
-    
     new_any::AnyMap m {
         {  "hi",                  2},
         {"lost",                  3},
@@ -76,7 +77,7 @@ TEST(NewAnyTest, AnyEquality)
 
     new_any::AnyMap m3;
     m3["a"] = m;
-    new_any::Any ss{ m2 };
+    new_any::Any ss { m2 };
 
     std::cout << new_any::anyMapToJson(m);
 

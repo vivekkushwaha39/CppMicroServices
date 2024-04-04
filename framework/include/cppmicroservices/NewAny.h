@@ -1,9 +1,9 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <variant>
 #include <vector>
-#include <sstream>
 namespace cppmicroservices
 {
     namespace new_any
@@ -128,10 +128,10 @@ namespace cppmicroservices
         {
             return !(v1 == v2);
         }
-        
+
         class Any
         {
-        public:
+          public:
             tAnyVariant child;
             template <class T>
             Any(T ch)
@@ -180,15 +180,17 @@ namespace cppmicroservices
                 }
             }
 
-            template<typename T>
-            friend T any_cast(const Any& operand) {
+            template <typename T>
+            friend T
+            any_cast(Any const& operand)
+            {
                 // Check if the type T is held by the variant and return it
-                if (auto val = std::get_if<T>(&operand.value)) {
+                if (auto val = std::get_if<T>(&operand.value))
+                {
                     return *val;
                 }
                 throw std::bad_cast(); // Throw if the cast cannot be performed
             }
-
         };
 
         bool equalVar(tAnyVariant const& var1, tAnyVariant const& var2);
