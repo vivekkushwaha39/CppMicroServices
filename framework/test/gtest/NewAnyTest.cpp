@@ -21,6 +21,8 @@ limitations under the License.
 =============================================================================*/
 
 #include "cppmicroservices/NewAny.h"
+#include "cppmicroservices/Any.h"
+#include "cppmicroservices/AnyMap.h"
 
 #include "gtest/gtest.h"
 
@@ -101,7 +103,13 @@ TEST(NewAnyTest, AnyList)
 
     std::cout << "--------------------------------\n" << aa.ToJson() << "\n";
 
+    Any ab(a);
+    std::cout << "--------------------------------\n" << ab.ToJSON() << "\n";
+
     std::cout << "--------------------------------\n" << map2.ToJson() << "\n";
 
     std::cout << "--------------------------------\n" << map1.ToJson() << "\n";
+
+    AnyMap map3 { any_map::ORDERED_MAP, { { "abcd", a } } };
+    std::cout << "--------------------------------\n" << Any(map3).ToJSON() << "\n";
 }
