@@ -89,13 +89,14 @@ TEST(NewAnyTest, AnyEquality)
 }
 TEST(NewAnyTest, AnyList)
 {
-
     std::list<int> a { 1, 2, 3, 4 };
     new_any::Any aa(a);
+    new_any::tAnyVariant aaaa { aa };
     std::map<std::string, int> strIntMap {
         {"a", 1},
         {"b", 2}
     };
+
     new_any::AnyMap map1 {
         {"abcd", aa}
     };
