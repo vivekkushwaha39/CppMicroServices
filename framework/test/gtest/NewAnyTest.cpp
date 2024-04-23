@@ -28,41 +28,8 @@ limitations under the License.
 
 using namespace cppmicroservices;
 
-TEST(NewAnyTest, AnyEquality)
+TEST(NewAnyTest, Experiment)
 {
-    EXPECT_EQ(new_any::Any(std::string("A")), new_any::Any(std::string("A")));
-    EXPECT_NE(new_any::Any(std::string("A")), new_any::Any(std::string("B")));
-    EXPECT_NE(new_any::Any(1), new_any::Any(std::string("A")));
-    EXPECT_EQ(new_any::Any(1), new_any::Any(1));
-    EXPECT_NE(new_any::Any(1), new_any::Any(2));
-    EXPECT_EQ(new_any::Any(true), new_any::Any(true));
-    EXPECT_NE(new_any::Any(true), new_any::Any(false));
-    EXPECT_NE(new_any::Any(1), new_any::Any(true)); // type mismatch should never be equal
-    EXPECT_NE(new_any::Any(0), new_any::Any(false));
-    EXPECT_EQ(new_any::Any(1.5), new_any::Any(1.5));
-    EXPECT_NE(new_any::Any(1.5), new_any::Any(1.6));
-
-    new_any::AnyMap lhs;
-    lhs["int"] = 1;
-    lhs["float"] = 2.5;
-    lhs["string"] = std::string("string");
-    lhs["bool"] = true;
-    new_any::AnyMap submap;
-    submap["a"] = std::string("a");
-    submap["b"] = std::string("b");
-    lhs["submap"] = submap;
-
-    new_any::AnyMap rhs = lhs; // make a copy of lhs
-    EXPECT_EQ(lhs, rhs);       // they should be equal
-
-    rhs["int"] = 2;
-    EXPECT_NE(lhs, rhs); // they should not be equal after modifying the rhs.
-    rhs["int"] = 1;
-    EXPECT_EQ(lhs, rhs); // now they should be equal again
-    rhs.erase("int");
-    EXPECT_NE(lhs,
-              rhs); // and finally, with the "int" element erased, they should not be equal
-                    // anymore.
 
     new_any::Any a { 1, 2, 3, 4 };
     new_any::Any x("a");
@@ -91,7 +58,6 @@ TEST(NewAnyTest, AnyList)
 {
     std::list<int> a { 1, 2, 3, 4 };
     new_any::Any aa(a);
-    new_any::tAnyVariant aaaa { aa };
     std::map<std::string, int> strIntMap {
         {"a", 1},
         {"b", 2}
@@ -113,4 +79,61 @@ TEST(NewAnyTest, AnyList)
 
     AnyMap map3 { any_map::ORDERED_MAP, { { "abcd", a } } };
     std::cout << "--------------------------------\n" << Any(map3).ToJSON() << "\n";
+}
+
+TEST(NewAnyTest, TestAnyChar)
+{
+    Any anyChar = 'a';
+    EXPECT_EQ(anyChar.Type(), typeid(char));
+    EXPECT_EQ(any_cast<char>(anyChar), 'a');
+    EXPECT_EQ(anyChar.ToString(), "a");
+    EXPECT_EQ(anyChar.ToJSON(), "a");
+}
+
+TEST(NewAnyTest, AnyEquality2)
+{
+    EXPECT_EQ(new_any::Any(std::string("A")), new_any::Any(std::string("A")));
+    EXPECT_NE(new_any::Any(std::string("A")), new_any::Any(std::string("B")));
+    EXPECT_NE(new_any::Any(1), new_any::Any(std::string("A")));
+    EXPECT_EQ(new_any::Any(1), new_any::Any(1));
+    EXPECT_NE(new_any::Any(1), new_any::Any(2));
+    EXPECT_EQ(new_any::Any(true), new_any::Any(true));
+    EXPECT_NE(new_any::Any(true), new_any::Any(false));
+    EXPECT_NE(new_any::Any(1), new_any::Any(true)); // type mismatch should never be equal
+    EXPECT_NE(new_any::Any(0), new_any::Any(false));
+    EXPECT_EQ(new_any::Any(1.5), new_any::Any(1.5));
+    EXPECT_NE(new_any::Any(1.5), new_any::Any(1.6));
+
+    new_any::AnyMap lhs(new_any::AnyMap::UNORDERED_MAP_CASEINSENSITIVE_KEYS);
+    lhs["int"] = 1;
+    lhs["float"] = 2.5;
+    lhs["string"] = std::string("string");
+    lhs["bool"] = true;
+    new_any::AnyMap submap(new_any::AnyMap::UNORDERED_MAP_CASEINSENSITIVE_KEYS);
+    submap["a"] = std::string("a");
+    submap["b"] = std::string("b");
+    lhs["submap"] = submap;
+
+    new_any::AnyMap rhs = lhs; // make a copy of lhs
+    EXPECT_EQ(lhs, rhs); // they should be equal
+
+    rhs["int"] = 2;
+    EXPECT_NE(lhs, rhs); // they should not be equal after modifying the rhs.
+    rhs["int"] = 1;
+    EXPECT_EQ(lhs, rhs); // now they should be equal again
+    rhs.erase("int");
+    EXPECT_NE(lhs,
+              rhs); // and finally, with the "int" element erased, they should not be equal
+                    // anymore.
+}
+
+TEST(NewAnyTest, AtCompoundKey)
+{
+    // Testing nested vector<new_any::Any> compound access
+    std::vector<new_any::Any> child { new_any::Any(1), new_any::Any(2) };
+    new_any::AnyMap uo { { { "hi",
+                             std::vector<new_any::Any> { new_any::Any { std::vector<new_any::Any> { 1, 2 } } } } } };
+
+    auto abcd = uo.AtCompoundKey("hi.0.0").child;
+    ASSERT_EQ(uo.AtCompoundKey("hi.0.0").child, 1);
 }

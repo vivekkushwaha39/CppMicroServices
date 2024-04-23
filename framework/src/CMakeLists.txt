@@ -3,6 +3,7 @@
 #-----------------------------------------------------------------------------
 
 set(_srcs
+  util/NewAny.cpp
   util/Any.cpp
   util/AnyMap.cpp
   util/CFRLogger.cpp

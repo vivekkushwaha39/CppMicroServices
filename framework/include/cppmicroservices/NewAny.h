@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <any>
 #include <assert.h>
+#include <cppmicroservices/FrameworkExport.h>
 #include <iostream>
 #include <list>
 #include <map>
@@ -66,7 +67,7 @@ namespace cppmicroservices
             recursive_wrapper&
             operator=(recursive_wrapper&& other)
             {
-                if (this == &this)
+                if (this == &other)
                 {
                     return *this;
                 }
@@ -103,14 +104,15 @@ namespace cppmicroservices
         };
 
         class AnyMap;
-        struct Any;
-        bool operator==(Any const& v1, Any const& v2);
-        bool operator==(AnyMap const& v1, AnyMap const& v2);
+        class Any;
+
+        bool US_Framework_EXPORT operator==(Any const& v1, Any const& v2);
         bool operator!=(Any const& v1, Any const& v2);
+        bool operator==(AnyMap const& v1, AnyMap const& v2);
         bool operator!=(AnyMap const& v1, AnyMap const& v2);
 
         using tAnyVariant
-            = std::variant<std::string, double, int, bool, recursive_wrapper<Any>, std::vector<Any>, AnyMap>;
+            = std::variant<std::string, double, int, bool, recursive_wrapper<Any>, std::vector<Any>, AnyMap, char>;
 
         inline std::string anyVariantToJson(tAnyVariant const& node, int indent = 0);
         inline std::string anyMapToJson(AnyMap const& map);
@@ -235,7 +237,18 @@ namespace cppmicroservices
 
             AnyMap(new_any::AnyMap::map_type mapType = new_any::AnyMap::map_type::ORDERED_MAP) : type { mapType }
             {
-                map.o = new ordered_any_map();
+                switch (mapType)
+                {
+                    case cppmicroservices::new_any::AnyMap::UNORDERED_MAP:
+                        map.uo = new unordered_any_map();
+                        break;
+                    case cppmicroservices::new_any::AnyMap::UNORDERED_MAP_CASEINSENSITIVE_KEYS:
+                        map.uoci = new unordered_any_cimap();
+                        break;
+                    default:
+                        map.o = new ordered_any_map();
+                        break;
+                }
             }
             AnyMap(std::any const& other) {}
             template <class T>
@@ -1011,6 +1024,8 @@ namespace cppmicroservices
                 }
             }
 
+            Any US_Framework_EXPORT AtCompoundKey(key_type const& key);
+
           protected:
             friend bool operator==(AnyMap const& v1, AnyMap const& v2);
             map_type type;
@@ -1117,65 +1132,39 @@ namespace cppmicroservices
             }
 
             template <typename T>
-            friend T
-            any_cast(Any const& operand)
-            {
-                // Check if the type T is held by the variant and return it
-                if (auto val = std::get_if<T>(&operand.value))
-                {
-                    return *val;
-                }
-                throw std::bad_cast(); // Throw if the cast cannot be performed
-            }
+            friend T any_cast(Any const& operand);
 
             std::string
             ToJson()
             {
                 return anyToJson(*this);
             }
+
+            template <class T>
+            bool
+            operator==(T const& other)
+            {
+                if (auto held = std::get_if<T>(&child))
+                {
+                    return (*held) == other;
+                }
+                return false;
+            }
         };
 
+        template <typename T>
+        T
+        any_cast(Any const& operand)
+        {
+            // Check if the type T is held by the variant and return it
+            if (auto val = std::get_if<T>(&operand.child))
+            {
+                return *val;
+            }
+            throw std::bad_cast(); // Throw if the cast cannot be performed
+        }
+
         bool equalVar(tAnyVariant const& var1, tAnyVariant const& var2);
-        bool
-        operator==(Any const& a1, Any const& a2)
-        {
-
-            if (!equalVar(a1.child, a2.child))
-            {
-                return false;
-            }
-            return true;
-        }
-        bool
-        equalVar(tAnyVariant const& var1, tAnyVariant const& var2)
-        {
-            if (var1.index() != var2.index())
-            {
-                return false;
-            }
-
-            if (var1.index() == 5)
-            { // Check if variant is a vector
-                auto const& vec1 = std::get<std::vector<Any>>(var1);
-                auto const& vec2 = std::get<std::vector<Any>>(var2);
-
-                if (vec1.size() != vec2.size())
-                {
-                    return false;
-                }
-
-                for (size_t i = 0; i < vec1.size(); ++i)
-                {
-                    if (!(vec1[i] == vec2[i]))
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            return var1 == var2;
-        }
 
         bool
         operator!=(Any const& a1, Any const& a2)
@@ -1191,7 +1180,7 @@ namespace cppmicroservices
                 {
                     using T = std::decay_t<decltype(arg)>;
                     if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::string> || std::is_same_v<T, double>
-                                  || std::is_same_v<T, bool>)
+                                  || std::is_same_v<T, bool> || std::is_same_v<T, char>)
                     {
                         ss << std::string(indent, ' ') << arg << "\n";
                     }
@@ -1210,11 +1199,12 @@ namespace cppmicroservices
                         ss << std::string(indent, ' ') << "[\n";
                         for (auto& v : arg)
                         {
-                            ss << anyVariantToJson(v, indent + 2);
+                            ss << anyVariantToJson(v.child, indent + 2);
                             ss << std::string(indent + 2, ' ') << ",\n";
                         }
                         ss << std::string(indent, ' ') << "]\n";
                     }
+                    else if constexpr (std::is_same_v<T, std::any>) {}
                     else
                     { // Node or recursive_wrapper
                         ss << anyVariantToJson(arg.get().child, indent + 2);
